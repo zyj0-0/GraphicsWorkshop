@@ -93,6 +93,9 @@ namespace fw{
 
 	GLuint CreateProgram(string vertexfilename, string fragmentfilename);
 
+	/*	primitives
+	*/
+	GLuint CreateCube();
 };
 
 #endif

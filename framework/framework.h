@@ -33,7 +33,9 @@ namespace fw{
 		virtual void OnInput(InputEvent e){}
 		virtual void OnUpdate(float dt){}
 		virtual void OnShutdown(){}
-
+		int WindowWidth()const{ return window_width_; };
+		int WindowHeight()const{ return window_height_; }
+		std::string WindowTitle()const{ return title_; }
 	private:
 		Application(const Application&) = delete;
 		void operator=(const Application&) = delete;
