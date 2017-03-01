@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <SOIL.h>
+#include <FreeImage.h>
 #include <stdexcept>
 
 #include "Graphics.h"
@@ -94,11 +94,21 @@ GLuint fw::LoadTexture(string filename)
 {
 	GLuint textureID;
 	glGenTextures(1, &textureID);
-	int width, height, channels;
-	unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, &channels, SOIL_LOAD_RGB);
+	FIBITMAP* bitmap = FreeImage_Load(
+		FreeImage_GetFileType(filename.c_str(), 0),
+		filename.c_str());
+	FIBITMAP *pImage = FreeImage_ConvertTo32Bits(bitmap);
+	int nWidth = FreeImage_GetWidth(pImage);
+	int nHeight = FreeImage_GetHeight(pImage);
+
 	// Assign texture to ID
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, nWidth, nHeight,
+		0, GL_BGRA, GL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(pImage));
+
+	FreeImage_Unload(pImage);
+	FreeImage_Unload(bitmap);
+
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Parameters
@@ -107,7 +117,6 @@ GLuint fw::LoadTexture(string filename)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	SOIL_free_image_data(image);
 	return textureID;
 }
 
@@ -286,12 +295,17 @@ GLuint fw::LoadCubemap(array<string, 6> facefiles)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
 
-	int w, h, c;
 	for (unsigned int i = 0; i < facefiles.size(); i++){
-		unsigned char* image = SOIL_load_image(facefiles[i].c_str(), 
-												&w, &h, &c, SOIL_LOAD_RGB);
+
+		FIBITMAP* bitmap = FreeImage_Load(
+			FreeImage_GetFileType(facefiles[i].c_str(), 0),
+			facefiles[i].c_str());
+		int nWidth = FreeImage_GetWidth(bitmap);
+		int nHeight = FreeImage_GetHeight(bitmap);
+
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 
-						w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+			nWidth, nHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(bitmap));
+		FreeImage_Unload(bitmap);
 	}
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
